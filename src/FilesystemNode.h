@@ -17,12 +17,15 @@ public:
 
   const std::filesystem::path& GetPath() const { return m_path; }
   const uintmax_t GetSize() const { return m_size; }
-  DirectoryNode* GetParent() { return m_parent; }
+  DirectoryNode* GetParent() const { return m_parent; }
 
 protected:
+  void PrintNode(const int indent) const;
+
   std::filesystem::path m_path;
   std::uintmax_t m_size = INVALID_SIZE;
   DirectoryNode* m_parent = nullptr;
+  std::filesystem::path m_parent_path;
 };
 
 class FileNode : public FilesystemNode
