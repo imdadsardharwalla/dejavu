@@ -45,6 +45,6 @@ public:
 private:
   std::vector<DirectoryNode> m_child_directories;
   std::vector<FileNode> m_child_files;
-};
 
-std::filesystem::path CleanDirPath(const std::filesystem::path& path);
+  std::filesystem::path CleanPath(const std::filesystem::path& path);
+};

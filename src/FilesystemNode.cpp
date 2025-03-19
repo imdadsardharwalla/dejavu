@@ -33,7 +33,7 @@ void FileNode::PrintTree(const int indent) const
 }
 
 DirectoryNode::DirectoryNode(const std::filesystem::path& path)
-    : FilesystemNode(CleanDirPath(path))
+    : FilesystemNode(CleanPath(path))
 {
   if (!std::filesystem::is_directory(m_path))
   {
@@ -97,7 +97,8 @@ void DirectoryNode::PrintTree(const int indent) const
   }
 }
 
-std::filesystem::path CleanDirPath(const std::filesystem::path& path)
+std::filesystem::path DirectoryNode::CleanPath(
+    const std::filesystem::path& path)
 {
   return (path / "").parent_path();
 }
