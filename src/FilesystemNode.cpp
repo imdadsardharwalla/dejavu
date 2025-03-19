@@ -41,30 +41,30 @@ DirectoryNode::DirectoryNode(const std::filesystem::path& path)
   }
 }
 
-// TODO: simplify this function
+namespace
+{
+template <typename T>
+uintmax_t AddChildNode(
+    std::vector<T>& child_nodes, const std::filesystem::path& path)
+{
+  child_nodes.emplace_back(path);
+  child_nodes.back().BuildTree();
+
+  auto size = child_nodes.back().GetSize();
+  assert(size != INVALID_SIZE);
+  return size;
+}
+} // namespace
+
 void DirectoryNode::BuildTree()
 {
   m_size = 0;
   for (const auto& entry : std::filesystem::directory_iterator(m_path))
   {
     if (entry.is_directory())
-    {
-      m_child_directories.emplace_back(entry.path());
-      m_child_directories.back().BuildTree();
-
-      auto size = m_child_directories.back().GetSize();
-      assert(size != INVALID_SIZE);
-      m_size += size;
-    }
+      m_size += AddChildNode(m_child_directories, entry.path());
     else if (entry.is_regular_file())
-    {
-      m_child_files.emplace_back(entry.path());
-      m_child_files.back().BuildTree();
-
-      auto size = m_child_files.back().GetSize();
-      assert(size != INVALID_SIZE);
-      m_size += size;
-    }
+      m_size += AddChildNode(m_child_files, entry.path());
     else
     {
       std::cerr << "Skipping " << entry.path()
