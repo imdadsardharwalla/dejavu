@@ -4,12 +4,14 @@
 #include <iostream>
 #include <string>
 
-FilesystemNode::FilesystemNode(const std::filesystem::path& path)
-    : m_path(path), m_size(INVALID_SIZE)
+FilesystemNode::FilesystemNode(
+    const std::filesystem::path& path, DirectoryNode* parent)
+    : m_path(path), m_size(INVALID_SIZE), m_parent(parent)
 {
 }
 
-FileNode::FileNode(const std::filesystem::path& path) : FilesystemNode(path)
+FileNode::FileNode(const std::filesystem::path& path, DirectoryNode* parent)
+    : FilesystemNode(path, parent)
 {
   if (!std::filesystem::is_regular_file(m_path))
   {
@@ -32,29 +34,15 @@ void FileNode::PrintTree(const int indent) const
   std::cout << "\n";
 }
 
-DirectoryNode::DirectoryNode(const std::filesystem::path& path)
-    : FilesystemNode(CleanPath(path))
+DirectoryNode::DirectoryNode(
+    const std::filesystem::path& path, DirectoryNode* parent)
+    : FilesystemNode(CleanPath(path), parent)
 {
   if (!std::filesystem::is_directory(m_path))
   {
     throw std::invalid_argument("Path is not a directory");
   }
 }
-
-namespace
-{
-template <typename T>
-uintmax_t AddChildNode(
-    std::vector<T>& child_nodes, const std::filesystem::path& path)
-{
-  child_nodes.emplace_back(path);
-  child_nodes.back().BuildTree();
-
-  auto size = child_nodes.back().GetSize();
-  assert(size != INVALID_SIZE);
-  return size;
-}
-} // namespace
 
 void DirectoryNode::BuildTree()
 {
@@ -95,6 +83,18 @@ void DirectoryNode::PrintTree(const int indent) const
   {
     std::cout << std::flush;
   }
+}
+
+template <typename T>
+uintmax_t DirectoryNode::AddChildNode(
+    std::vector<T>& child_nodes, const std::filesystem::path& path)
+{
+  child_nodes.emplace_back(path, this);
+  child_nodes.back().BuildTree();
+
+  auto size = child_nodes.back().GetSize();
+  assert(size != INVALID_SIZE);
+  return size;
 }
 
 std::filesystem::path DirectoryNode::CleanPath(
