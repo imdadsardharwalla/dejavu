@@ -7,6 +7,8 @@ project(dejavu)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Export the compile commands for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if (MSVC)
   add_compile_options( "/W4" "/WX" "/MP" "/Zi" )

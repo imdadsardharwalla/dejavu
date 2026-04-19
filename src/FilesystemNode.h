@@ -16,7 +16,7 @@ public:
   virtual void PrintTree(const int indent = 0) const = 0;
 
   const std::filesystem::path& GetPath() const { return m_path; }
-  const uintmax_t GetSize() const { return m_size; }
+  uintmax_t GetSize() const { return m_size; }
   DirectoryNode* GetParent() const { return m_parent; }
 
 protected:
@@ -49,12 +49,12 @@ public:
   void PrintTree(const int indent = 0) const override;
 
 private:
-  std::vector<DirectoryNode> m_child_directories;
-  std::vector<FileNode> m_child_files;
+  std::vector<std::unique_ptr<DirectoryNode>> m_child_directories;
+  std::vector<std::unique_ptr<FileNode>> m_child_files;
 
   template <typename T>
-  uintmax_t AddChildNode(
-      std::vector<T>& child_nodes, const std::filesystem::path& path);
+  uintmax_t AddChildNode(std::vector<std::unique_ptr<T>>& child_nodes,
+      const std::filesystem::path& path);
 
   static std::filesystem::path CleanPath(const std::filesystem::path& path);
 };

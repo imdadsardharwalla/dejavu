@@ -50,10 +50,7 @@ FileNode::FileNode(const std::filesystem::path& path, DirectoryNode* parent)
 
 void FileNode::BuildTree() { m_size = std::filesystem::file_size(m_path); }
 
-void FileNode::PrintTree(const int indent) const
-{
-  PrintNode(indent);
-}
+void FileNode::PrintTree(const int indent) const { PrintNode(indent); }
 
 DirectoryNode::DirectoryNode(
     const std::filesystem::path& path, DirectoryNode* parent)
@@ -88,23 +85,25 @@ void DirectoryNode::PrintTree(const int indent) const
   PrintNode(indent);
 
   for (const auto& child_directory : m_child_directories)
-    child_directory.PrintTree(indent + 2);
+    child_directory->PrintTree(indent + 2);
 
   for (const auto& child_file : m_child_files)
-    child_file.PrintTree(indent + 2);
+    child_file->PrintTree(indent + 2);
 
   if (indent == 0)
     std::cout << std::flush;
 }
 
-template <typename T>
+template <typename NodeT>
 uintmax_t DirectoryNode::AddChildNode(
-    std::vector<T>& child_nodes, const std::filesystem::path& path)
+    std::vector<std::unique_ptr<NodeT>>& child_nodes,
+    const std::filesystem::path& path)
 {
-  child_nodes.emplace_back(path, this);
-  child_nodes.back().BuildTree();
+  auto& child_node =
+      child_nodes.emplace_back(std::make_unique<NodeT>(path, this));
+  child_node->BuildTree();
 
-  auto size = child_nodes.back().GetSize();
+  const auto size = child_node->GetSize();
   assert(size != INVALID_SIZE);
   return size;
 }
