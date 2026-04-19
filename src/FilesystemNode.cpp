@@ -141,6 +141,32 @@ void DirectoryNode::PrintTree(const int indent) const
     std::cout << std::flush;
 }
 
+std::pair<std::vector<DirectoryNode*>, std::vector<FileNode*>>
+DirectoryNode::FlattenTree()
+{
+  std::vector<DirectoryNode*> directories;
+  std::vector<FileNode*> files;
+
+  directories.push_back(this);
+  FlattenChildren(directories, files);
+
+  return {directories, files};
+}
+
+void DirectoryNode::FlattenChildren(
+    std::vector<DirectoryNode*>& child_directories,
+    std::vector<FileNode*>& child_files) const
+{
+  for (auto& child_directory : m_child_directories)
+  {
+    child_directories.push_back(child_directory.get());
+    child_directory->FlattenChildren(child_directories, child_files);
+  }
+
+  for (auto& child_file : m_child_files)
+    child_files.push_back(child_file.get());
+}
+
 // Build a fingerprint of the directory from its children's names and sizes,
 // along with child directory fingerprints and child file hashes (full if
 // available, otherwise partial). File names are included because two
