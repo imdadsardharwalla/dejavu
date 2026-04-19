@@ -25,7 +25,6 @@ protected:
   std::filesystem::path m_path;
   std::uintmax_t m_size = INVALID_SIZE;
   DirectoryNode* m_parent = nullptr;
-  std::filesystem::path m_parent_path;
 };
 
 class FileNode : public FilesystemNode

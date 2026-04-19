@@ -8,8 +8,6 @@ FilesystemNode::FilesystemNode(
     const std::filesystem::path& path, DirectoryNode* parent)
     : m_path(path), m_size(INVALID_SIZE), m_parent(parent)
 {
-  if (m_parent != nullptr)
-    m_parent_path = m_parent->GetPath();
 }
 
 void FilesystemNode::PrintNode(const int indent) const
@@ -17,26 +15,12 @@ void FilesystemNode::PrintNode(const int indent) const
   std::string indent_str(indent, ' ');
   std::cout << indent_str << m_path.filename();
 
-  std::cout << "[this = " << this << "]" << std::endl;
-
-  if (m_size != INVALID_SIZE)
+  if (GetSize() != INVALID_SIZE)
     std::cout << " (" << m_size << " bytes)";
   else
     std::cout << " (size unknown)";
 
-  if (m_parent == nullptr)
-    std::cout << " [root]";
-  else
-  {
-    // print pointer to parent node
-    std::cout << " [parent: " << m_parent << "]" << std::flush;
-    std::cout << " [parent_path: " << m_parent_path << "]" << std::flush;
-
-    std::cout << " [parent: " << m_parent->GetPath().filename() << "]";
-  }
-
-  std::cout << "\n";
-  std::flush(std::cout);
+  std::cout << std::endl;
 }
 
 FileNode::FileNode(const std::filesystem::path& path, DirectoryNode* parent)
