@@ -1,2 +1,2 @@
-# duplicate-finder
+# dejavu
 Find duplicate files and directories

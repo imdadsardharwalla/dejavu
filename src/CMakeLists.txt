@@ -1,4 +1,4 @@
-set(target DuplicateFinder)
+set(target dejavu)
 
 message(STATUS "Adding target: ${target}")
 
