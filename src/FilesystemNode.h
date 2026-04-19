@@ -1,7 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <vector>
 
 const auto INVALID_SIZE = std::numeric_limits<std::uintmax_t>::max();
@@ -35,7 +38,15 @@ public:
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
 
+  uint64_t GetPartialHash();
+  bool HasPartialHash() const { return m_partial_hash.has_value(); }
+
+  uint64_t GetFullHash();
+  bool HasFullHash() const { return m_full_hash.has_value(); }
+
 private:
+  std::optional<uint64_t> m_partial_hash = std::nullopt;
+  std::optional<uint64_t> m_full_hash = std::nullopt;
 };
 
 class DirectoryNode : public FilesystemNode
@@ -47,9 +58,13 @@ public:
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
 
+  uint64_t GetFingerprint();
+
 private:
   std::vector<std::unique_ptr<DirectoryNode>> m_child_directories;
   std::vector<std::unique_ptr<FileNode>> m_child_files;
+
+  std::optional<uint64_t> m_fingerprint = std::nullopt;
 
   template <typename T>
   uintmax_t AddChildNode(std::vector<std::unique_ptr<T>>& child_nodes,
