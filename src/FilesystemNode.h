@@ -17,6 +17,7 @@ class FilesystemNode
 {
 public:
   FilesystemNode(const std::filesystem::path& path, DirectoryNode* parent);
+  virtual ~FilesystemNode() = default;
 
   virtual void BuildTree() = 0;
   virtual void PrintTree(const int indent = 0) const = 0;
@@ -36,7 +37,7 @@ protected:
 class FileNode : public FilesystemNode
 {
 public:
-  FileNode(const std::filesystem::path& path, DirectoryNode* parent = nullptr);
+  FileNode(const std::filesystem::path& path, DirectoryNode* parent);
 
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
@@ -56,11 +57,12 @@ class DirectoryNode : public FilesystemNode
 {
 public:
   DirectoryNode(
-      const std::filesystem::path& path, DirectoryNode* parent = nullptr);
+      const std::filesystem::path& path, DirectoryNode* parent);
 
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
-  std::pair<std::vector<DirectoryNode*>, std::vector<FileNode*>> FlattenTree();
+  void FlattenTree(std::vector<DirectoryNode*>& directories,
+      std::vector<FileNode*>& files);
 
   uint64_t GetFingerprint();
 
@@ -69,9 +71,6 @@ private:
   std::vector<std::unique_ptr<FileNode>> m_child_files;
 
   std::optional<uint64_t> m_fingerprint = std::nullopt;
-
-  void FlattenChildren(std::vector<DirectoryNode*>& child_directories,
-      std::vector<FileNode*>& child_files) const;
 
   template <typename T>
   uintmax_t AddChildNode(std::vector<std::unique_ptr<T>>& child_nodes,

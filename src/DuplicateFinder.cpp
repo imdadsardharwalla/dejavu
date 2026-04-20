@@ -3,11 +3,36 @@
 #include "FilesystemNode.h"
 
 #include <cstdint>
+#include <memory>
 #include <ranges>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace dejavu
 {
+
+void DuplicateFinder::Add(const std::filesystem::path& path)
+{
+  if (std::filesystem::is_regular_file(path))
+  {
+    auto file_node = std::make_unique<FileNode>(path, nullptr);
+    file_node->BuildTree();
+    m_input_files.push_back(std::move(file_node));
+  }
+  else if (std::filesystem::is_directory(path))
+  {
+    auto directory_node = std::make_unique<DirectoryNode>(path, nullptr);
+    directory_node->BuildTree();
+    m_input_directories.push_back(std::move(directory_node));
+  }
+  else
+  {
+    throw std::invalid_argument(
+        "Path is not a file or directory: " + path.string());
+  }
+
+  m_duplicates_computed = false;
+}
 
 namespace
 {
@@ -23,7 +48,6 @@ using DirectoryNodeGroupMap = NodeGroupMap<KeyT, DirectoryNode>;
 const auto view_duplicates = std::views::filter([](const auto& pair)
                                  { return pair.second.size() >= 2; }) |
                              std::views::values;
-} // namespace
 
 std::vector<std::vector<FileNode*>> FindDuplicateFiles(
     std::vector<FileNode*>& files)
@@ -81,4 +105,93 @@ std::vector<std::vector<DirectoryNode*>> FindDuplicateDirectories(
   return duplicates;
 }
 
+// Retain only the highest-level duplicates. This is done by removing duplicate
+// groups for which every member's parent directory is also a duplicate. There
+// is a subtlety here that is worth noting. Consider the following structure:
+//
+// * A/foo.txt
+// * B/foo.txt
+// * foo.txt
+//
+// We will have the following duplicate groups:
+//
+// * {A/foo.txt, B/foo.txt, foo.txt}
+// * {A/, B/}
+//
+// There are two ways to handle this:
+//
+// 1. Remove the file group {A/foo.txt, B/foo.txt, foo.txt} since A/foo.txt and
+//    B/foo.txt are nested, leaving foo.txt with no reported duplicates;
+// 2. Report {A/, B/} and {A/foo.txt, B/foo.txt, foo.txt} as duplicates.
+//
+// We choose the second option to avoid any duplicates being silently omitted.
+void RemoveNestedDuplicateGroups(
+    std::vector<std::vector<FileNode*>>& duplicate_files,
+    std::vector<std::vector<DirectoryNode*>>& duplicate_directories)
+{
+  // Create a (flattened) set of all duplicate directories.
+  std::unordered_set<DirectoryNode*> dup_dirs;
+  for (auto& group : duplicate_directories)
+  {
+    for (auto* directory : group)
+      dup_dirs.insert(directory);
+  }
+
+  // Check if a duplicate group is a nested duplicate (every member's
+  // parent directory is also a duplicate).
+  auto is_group_duplicate = [&dup_dirs](auto& group) -> bool
+  {
+    for (auto* filesystem_node : group)
+    {
+      if (!filesystem_node->GetParent())
+        return false;
+
+      if (!dup_dirs.contains(filesystem_node->GetParent()))
+        return false;
+    }
+    return true;
+  };
+
+  std::erase_if(duplicate_files, is_group_duplicate);
+  std::erase_if(duplicate_directories, is_group_duplicate);
+}
+
+} // namespace
+
+void DuplicateFinder::ComputeDuplicates()
+{
+  std::vector<DirectoryNode*> directories;
+  std::vector<FileNode*> files;
+
+  // Copy the standalone input files into the list of files.
+  for (auto& file : m_input_files)
+    files.push_back(file.get());
+
+  // Flatten the input directories into a list of files and directories. Note:
+  // the root directory is automatically included in the flattened list.
+  for (auto& directory : m_input_directories)
+    directory->FlattenTree(directories, files);
+
+  m_duplicate_files = FindDuplicateFiles(files);
+  m_duplicate_directories = FindDuplicateDirectories(directories);
+
+  RemoveNestedDuplicateGroups(m_duplicate_files, m_duplicate_directories);
+
+  m_duplicates_computed = true;
+}
+
+std::vector<std::vector<FileNode*>> DuplicateFinder::GetDuplicateFiles()
+{
+  if (!m_duplicates_computed)
+    ComputeDuplicates();
+  return m_duplicate_files;
+}
+
+std::vector<std::vector<DirectoryNode*>>
+DuplicateFinder::GetDuplicateDirectories()
+{
+  if (!m_duplicates_computed)
+    ComputeDuplicates();
+  return m_duplicate_directories;
+}
 } // namespace dejavu

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+#include <memory>
 #include <vector>
 
 namespace dejavu
@@ -8,13 +10,23 @@ namespace dejavu
 class FileNode;
 class DirectoryNode;
 
-// Given a list of FileNodes, return a list of groups of duplicate files.
-std::vector<std::vector<FileNode*>> FindDuplicateFiles(
-    std::vector<FileNode*>& files);
+class DuplicateFinder
+{
+public:
+  void Add(const std::filesystem::path& path);
 
-// Given a list of DirectoryNodes, return a list of groups of duplicate
-// directories. Note: FindDuplicateFiles() must be called first to ensure that
-// the appropriate metadata is available for the directories.
-std::vector<std::vector<DirectoryNode*>> FindDuplicateDirectories(
-    std::vector<DirectoryNode*>& directories);
+  void ComputeDuplicates();
+
+  std::vector<std::vector<FileNode*>> GetDuplicateFiles();
+  std::vector<std::vector<DirectoryNode*>> GetDuplicateDirectories();
+
+private:
+  std::vector<std::unique_ptr<FileNode>> m_input_files;
+  std::vector<std::unique_ptr<DirectoryNode>> m_input_directories;
+
+  std::vector<std::vector<FileNode*>> m_duplicate_files;
+  std::vector<std::vector<DirectoryNode*>> m_duplicate_directories;
+
+  bool m_duplicates_computed = false;
+};
 } // namespace dejavu

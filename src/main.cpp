@@ -6,45 +6,19 @@
 
 int main(const int argc, const char* const argv[])
 {
-  if (argc != 2)
+  if (argc < 2)
   {
-    std::cerr << "Usage: " << argv[0] << " <directory>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <path> [<path> ...]" << std::endl;
     return 1;
   }
 
   try
   {
-    dejavu::DirectoryNode root(std::filesystem::absolute(argv[1]));
-    root.BuildTree();
+    dejavu::DuplicateFinder finder;
+    for (int i = 1; i < argc; ++i)
+      finder.Add(std::filesystem::absolute(argv[i]));
 
-    auto [directories, files] = root.FlattenTree();
-
-    std::cout << "=== Directories ===" << std::endl;
-    for (auto* dir : directories)
-    {
-      std::cout << dir->GetPath() << "\n"
-                << "  size:        " << dir->GetSize() << "\n"
-                << "  fingerprint: " << std::hex << dir->GetFingerprint()
-                << std::dec << "\n"
-                << std::endl;
-    }
-
-    std::cout << "=== Files ===" << std::endl;
-    for (auto* file : files)
-    {
-      std::cout << file->GetPath() << "\n"
-                << "  size:         " << file->GetSize() << "\n"
-                << "  partial hash: " << std::hex << file->GetPartialHash()
-                << std::dec << "\n";
-
-      if (file->HasFullHash())
-        std::cout << "  full hash:    " << std::hex << file->GetFullHash()
-                  << std::dec << "\n";
-
-      std::cout << std::endl;
-    }
-
-    auto duplicate_file_groups = dejavu::FindDuplicateFiles(files);
+    auto duplicate_file_groups = finder.GetDuplicateFiles();
 
     std::cout << "=== Duplicate Files ===" << std::endl;
     if (duplicate_file_groups.empty())
@@ -63,7 +37,7 @@ int main(const int argc, const char* const argv[])
       }
     }
 
-    auto duplicate_dir_groups = dejavu::FindDuplicateDirectories(directories);
+    auto duplicate_dir_groups = finder.GetDuplicateDirectories();
 
     std::cout << "=== Duplicate Directories ===" << std::endl;
     if (duplicate_dir_groups.empty())
