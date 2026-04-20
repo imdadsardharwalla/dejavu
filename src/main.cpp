@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "DuplicateFinder.h"
 #include "FilesystemNode.h"
 
 int main(const int argc, const char* const argv[])
@@ -41,6 +42,25 @@ int main(const int argc, const char* const argv[])
                   << std::dec << "\n";
 
       std::cout << std::endl;
+    }
+
+    auto duplicate_groups = dejavu::FindDuplicateFiles(files);
+
+    std::cout << "=== Duplicate Files ===" << std::endl;
+    if (duplicate_groups.empty())
+    {
+      std::cout << "No duplicates found." << std::endl;
+    }
+    else
+    {
+      for (size_t i = 0; i < duplicate_groups.size(); ++i)
+      {
+        std::cout << "Group " << (i + 1) << ":" << std::endl;
+        for (auto* file : duplicate_groups[i])
+          std::cout << "  " << file->GetPath() << " (" << file->GetSize()
+                    << " bytes)" << std::endl;
+        std::cout << std::endl;
+      }
     }
   }
   catch (const std::exception& e)
