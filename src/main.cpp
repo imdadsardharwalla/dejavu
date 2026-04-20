@@ -44,20 +44,39 @@ int main(const int argc, const char* const argv[])
       std::cout << std::endl;
     }
 
-    auto duplicate_groups = dejavu::FindDuplicateFiles(files);
+    auto duplicate_file_groups = dejavu::FindDuplicateFiles(files);
 
     std::cout << "=== Duplicate Files ===" << std::endl;
-    if (duplicate_groups.empty())
+    if (duplicate_file_groups.empty())
     {
       std::cout << "No duplicates found." << std::endl;
     }
     else
     {
-      for (size_t i = 0; i < duplicate_groups.size(); ++i)
+      for (size_t i = 0; i < duplicate_file_groups.size(); ++i)
       {
         std::cout << "Group " << (i + 1) << ":" << std::endl;
-        for (auto* file : duplicate_groups[i])
+        for (auto* file : duplicate_file_groups[i])
           std::cout << "  " << file->GetPath() << " (" << file->GetSize()
+                    << " bytes)" << std::endl;
+        std::cout << std::endl;
+      }
+    }
+
+    auto duplicate_dir_groups = dejavu::FindDuplicateDirectories(directories);
+
+    std::cout << "=== Duplicate Directories ===" << std::endl;
+    if (duplicate_dir_groups.empty())
+    {
+      std::cout << "No duplicates found." << std::endl;
+    }
+    else
+    {
+      for (size_t i = 0; i < duplicate_dir_groups.size(); ++i)
+      {
+        std::cout << "Group " << (i + 1) << ":" << std::endl;
+        for (auto* dir : duplicate_dir_groups[i])
+          std::cout << "  " << dir->GetPath() << " (" << dir->GetSize()
                     << " bytes)" << std::endl;
         std::cout << std::endl;
       }

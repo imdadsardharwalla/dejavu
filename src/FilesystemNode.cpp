@@ -183,14 +183,14 @@ uint64_t DirectoryNode::GetFingerprint()
 
     for (auto& child_directory : m_child_directories)
     {
-      // Child directory name
+      // Include child directory name
       hash_state.update(child_directory->GetPath().filename().string());
 
-      // Child directory fingerprint
+      // Include child directory fingerprint
       const auto fingerprint = child_directory->GetFingerprint();
       hash_state.update(&fingerprint, sizeof(fingerprint));
 
-      // Child directory size
+      // Include child directory size
       const auto size = child_directory->GetSize();
       assert(size != INVALID_SIZE);
       hash_state.update(&size, sizeof(size));
@@ -198,21 +198,24 @@ uint64_t DirectoryNode::GetFingerprint()
 
     for (auto& child_file : m_child_files)
     {
-      // Child file name
+      // Include child file name
       hash_state.update(child_file->GetPath().filename().string());
 
-      // If the child file has a full hash, add it. Otherwise, add the partial
-      // hash.
+      // If the child file has a full hash, include it. Otherwise, include the
+      // partial hash.
       const auto hash = child_file->HasFullHash()
                             ? child_file->GetFullHash()
                             : child_file->GetPartialHash();
       hash_state.update(&hash, sizeof(hash));
 
-      // Child file size
+      // Include child file size
       const auto size = child_file->GetSize();
       assert(size != INVALID_SIZE);
       hash_state.update(&size, sizeof(size));
     }
+
+    // Include size of the directory
+    hash_state.update(&m_size, sizeof(m_size));
 
     m_fingerprint = hash_state.digest();
   }
