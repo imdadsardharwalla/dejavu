@@ -16,7 +16,7 @@ int main(const int argc, const char* const argv[])
   {
     dejavu::DuplicateFinder finder;
     for (int i = 1; i < argc; ++i)
-      finder.Add(std::filesystem::absolute(argv[i]));
+      finder.Add(std::filesystem::path(argv[i]));
 
     auto duplicate_file_groups = finder.GetDuplicateFiles();
 
