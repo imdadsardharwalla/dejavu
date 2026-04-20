@@ -22,9 +22,9 @@ public:
   virtual void BuildTree() = 0;
   virtual void PrintTree(const int indent = 0) const = 0;
 
-  const std::filesystem::path& GetPath() const { return m_path; }
-  uintmax_t GetSize() const { return m_size; }
-  DirectoryNode* GetParent() const { return m_parent; }
+  const std::filesystem::path& Path() const { return m_path; }
+  uintmax_t Size() const { return m_size; }
+  DirectoryNode* Parent() const { return m_parent; }
 
 protected:
   void PrintNode(const int indent) const;
@@ -42,10 +42,10 @@ public:
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
 
-  uint64_t GetPartialHash();
+  uint64_t PartialHash();
   bool HasPartialHash() const { return m_partial_hash.has_value(); }
 
-  uint64_t GetFullHash();
+  uint64_t FullHash();
   bool HasFullHash() const { return m_full_hash.has_value(); }
 
 private:
@@ -64,7 +64,7 @@ public:
   void FlattenTree(std::vector<DirectoryNode*>& directories,
       std::vector<FileNode*>& files);
 
-  uint64_t GetFingerprint();
+  uint64_t Fingerprint();
 
 private:
   std::vector<std::unique_ptr<DirectoryNode>> m_child_directories;

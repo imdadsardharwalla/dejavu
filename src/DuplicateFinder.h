@@ -17,8 +17,10 @@ public:
 
   void ComputeDuplicates();
 
-  std::vector<std::vector<FileNode*>> GetDuplicateFiles();
-  std::vector<std::vector<DirectoryNode*>> GetDuplicateDirectories();
+  const std::vector<std::vector<FileNode*>>& FileDuplicates() const;
+  const std::vector<std::vector<DirectoryNode*>>& DirectoryDuplicates() const;
+
+  bool ResultsUpToDate() const { return m_results_valid; }
 
 private:
   std::vector<std::unique_ptr<FileNode>> m_input_files;
@@ -27,6 +29,6 @@ private:
   std::vector<std::vector<FileNode*>> m_duplicate_files;
   std::vector<std::vector<DirectoryNode*>> m_duplicate_directories;
 
-  bool m_duplicates_computed = false;
+  bool m_results_valid = false;
 };
 } // namespace dejavu

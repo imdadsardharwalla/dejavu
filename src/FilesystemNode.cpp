@@ -1,10 +1,10 @@
 #include "FilesystemNode.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <fstream>
 #include <iostream>
-#include <ranges>
 #include <string>
 
 #include "xxhash_cpp/xxhash.hpp"
@@ -19,14 +19,15 @@ FilesystemNode::FilesystemNode(
     const std::filesystem::path& path, DirectoryNode* parent)
     : m_path(path), m_size(INVALID_SIZE), m_parent(parent)
 {
+  m_path.make_preferred();
 }
 
 void FilesystemNode::PrintNode(const int indent) const
 {
   std::string indent_str(indent, ' ');
-  std::cout << indent_str << m_path.filename();
+  std::cout << indent_str << m_path.filename().string();
 
-  if (GetSize() != INVALID_SIZE)
+  if (Size() != INVALID_SIZE)
     std::cout << " (" << m_size << " bytes)";
   else
     std::cout << " (size unknown)";
@@ -50,7 +51,7 @@ void FileNode::PrintTree(const int indent) const { PrintNode(indent); }
 // Read the first PARTIAL_HASH_SIZE bytes of the file and compute the partial
 // hash. If the file is smaller than PARTIAL_HASH_SIZE, we can also set the full
 // hash.
-uint64_t FileNode::GetPartialHash()
+uint64_t FileNode::PartialHash()
 {
   if (!m_partial_hash.has_value())
   {
@@ -73,7 +74,7 @@ uint64_t FileNode::GetPartialHash()
 
 // Read the entire file in chunks of READ_CHUNK_SIZE bytes and compute the full
 // hash.
-uint64_t FileNode::GetFullHash()
+uint64_t FileNode::FullHash()
 {
   if (!m_full_hash.has_value())
   {
@@ -117,7 +118,7 @@ void DirectoryNode::BuildTree()
       m_size += AddChildNode(m_child_files, entry.path());
     else
     {
-      std::cerr << "Skipping " << entry.path()
+      std::cerr << "Skipping " << entry.path().string()
                 << " because it is not a directory or a regular file"
                 << std::endl;
     }
@@ -125,9 +126,9 @@ void DirectoryNode::BuildTree()
 
   // Sort children by name to ensure a consistent ordering
   std::ranges::sort(m_child_directories, [](const auto& a, const auto& b)
-      { return a->GetPath().filename() < b->GetPath().filename(); });
+      { return a->Path().filename() < b->Path().filename(); });
   std::ranges::sort(m_child_files, [](const auto& a, const auto& b)
-      { return a->GetPath().filename() < b->GetPath().filename(); });
+      { return a->Path().filename() < b->Path().filename(); });
 }
 
 void DirectoryNode::PrintTree(const int indent) const
@@ -145,8 +146,7 @@ void DirectoryNode::PrintTree(const int indent) const
 }
 
 void DirectoryNode::FlattenTree(
-    std::vector<DirectoryNode*>& directories,
-    std::vector<FileNode*>& files)
+    std::vector<DirectoryNode*>& directories, std::vector<FileNode*>& files)
 {
   directories.push_back(this);
 
@@ -162,7 +162,7 @@ void DirectoryNode::FlattenTree(
 // available, otherwise partial). File names are included because two
 // directories are only considered duplicates if they contain the same children
 // with the same names, unlike files, where only content matters.
-uint64_t DirectoryNode::GetFingerprint()
+uint64_t DirectoryNode::Fingerprint()
 {
   if (!m_fingerprint.has_value())
   {
@@ -171,14 +171,14 @@ uint64_t DirectoryNode::GetFingerprint()
     for (auto& child_directory : m_child_directories)
     {
       // Include child directory name
-      hash_state.update(child_directory->GetPath().filename().string());
+      hash_state.update(child_directory->Path().filename().string());
 
       // Include child directory fingerprint
-      const auto fingerprint = child_directory->GetFingerprint();
+      const auto fingerprint = child_directory->Fingerprint();
       hash_state.update(&fingerprint, sizeof(fingerprint));
 
       // Include child directory size
-      const auto size = child_directory->GetSize();
+      const auto size = child_directory->Size();
       assert(size != INVALID_SIZE);
       hash_state.update(&size, sizeof(size));
     }
@@ -186,17 +186,17 @@ uint64_t DirectoryNode::GetFingerprint()
     for (auto& child_file : m_child_files)
     {
       // Include child file name
-      hash_state.update(child_file->GetPath().filename().string());
+      hash_state.update(child_file->Path().filename().string());
 
       // If the child file has a full hash, include it. Otherwise, include the
       // partial hash.
       const auto hash = child_file->HasFullHash()
-                            ? child_file->GetFullHash()
-                            : child_file->GetPartialHash();
+                            ? child_file->FullHash()
+                            : child_file->PartialHash();
       hash_state.update(&hash, sizeof(hash));
 
       // Include child file size
-      const auto size = child_file->GetSize();
+      const auto size = child_file->Size();
       assert(size != INVALID_SIZE);
       hash_state.update(&size, sizeof(size));
     }
@@ -219,7 +219,7 @@ uintmax_t DirectoryNode::AddChildNode(
       child_nodes.emplace_back(std::make_unique<NodeT>(path, this));
   child_node->BuildTree();
 
-  const auto size = child_node->GetSize();
+  const auto size = child_node->Size();
   assert(size != INVALID_SIZE);
   return size;
 }

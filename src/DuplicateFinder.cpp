@@ -31,7 +31,7 @@ void DuplicateFinder::Add(const std::filesystem::path& path)
         "Path is not a file or directory: " + path.string());
   }
 
-  m_duplicates_computed = false;
+  m_results_valid = false;
 }
 
 namespace
@@ -55,14 +55,14 @@ std::vector<std::vector<FileNode*>> FindDuplicateFiles(
   // Tier 1: group files by size.
   FileNodeGroupMap<std::uintmax_t> size_map;
   for (auto* file : files)
-    size_map[file->GetSize()].push_back(file);
+    size_map[file->Size()].push_back(file);
 
   // Tier 2: group non-unique files by partial hash.
   FileNodeGroupMap<uint64_t> partial_hash_map;
   for (const auto& group : size_map | view_duplicates)
   {
     for (auto* file : group)
-      partial_hash_map[file->GetPartialHash()].push_back(file);
+      partial_hash_map[file->PartialHash()].push_back(file);
   }
 
   // Tier 3: group non-unique files by their full hash.
@@ -70,7 +70,7 @@ std::vector<std::vector<FileNode*>> FindDuplicateFiles(
   for (const auto& group : partial_hash_map | view_duplicates)
   {
     for (auto* file : group)
-      full_hash_map[file->GetFullHash()].push_back(file);
+      full_hash_map[file->FullHash()].push_back(file);
   }
 
   // Return the groups of duplicate files.
@@ -87,14 +87,14 @@ std::vector<std::vector<DirectoryNode*>> FindDuplicateDirectories(
   // Tier 1: group directories by size.
   DirectoryNodeGroupMap<std::uintmax_t> size_map;
   for (auto* directory : directories)
-    size_map[directory->GetSize()].push_back(directory);
+    size_map[directory->Size()].push_back(directory);
 
   // Tier 2: group non-unique directories by fingerprint.
   DirectoryNodeGroupMap<uint64_t> fingerprint_map;
   for (const auto& group : size_map | view_duplicates)
   {
     for (auto* directory : group)
-      fingerprint_map[directory->GetFingerprint()].push_back(directory);
+      fingerprint_map[directory->Fingerprint()].push_back(directory);
   }
 
   // Return the groups of duplicate directories.
@@ -143,10 +143,10 @@ void RemoveNestedDuplicateGroups(
   {
     for (auto* filesystem_node : group)
     {
-      if (!filesystem_node->GetParent())
+      if (!filesystem_node->Parent())
         return false;
 
-      if (!dup_dirs.contains(filesystem_node->GetParent()))
+      if (!dup_dirs.contains(filesystem_node->Parent()))
         return false;
     }
     return true;
@@ -177,21 +177,18 @@ void DuplicateFinder::ComputeDuplicates()
 
   RemoveNestedDuplicateGroups(m_duplicate_files, m_duplicate_directories);
 
-  m_duplicates_computed = true;
+  m_results_valid = true;
 }
 
-std::vector<std::vector<FileNode*>> DuplicateFinder::GetDuplicateFiles()
+const std::vector<std::vector<FileNode*>>&
+DuplicateFinder::FileDuplicates() const
 {
-  if (!m_duplicates_computed)
-    ComputeDuplicates();
   return m_duplicate_files;
 }
 
-std::vector<std::vector<DirectoryNode*>>
-DuplicateFinder::GetDuplicateDirectories()
+const std::vector<std::vector<DirectoryNode*>>&
+DuplicateFinder::DirectoryDuplicates() const
 {
-  if (!m_duplicates_computed)
-    ComputeDuplicates();
   return m_duplicate_directories;
 }
 } // namespace dejavu
