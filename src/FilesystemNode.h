@@ -7,6 +7,9 @@
 #include <optional>
 #include <vector>
 
+namespace dejavu
+{
+
 const auto INVALID_SIZE = std::numeric_limits<std::uintmax_t>::max();
 
 class DirectoryNode;
@@ -57,8 +60,7 @@ public:
 
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
-  std::pair<std::vector<DirectoryNode*>, std::vector<FileNode*>>
-  FlattenTree();
+  std::pair<std::vector<DirectoryNode*>, std::vector<FileNode*>> FlattenTree();
 
   uint64_t GetFingerprint();
 
@@ -77,3 +79,5 @@ private:
 
   static std::filesystem::path CleanPath(const std::filesystem::path& path);
 };
+
+} // namespace dejavu

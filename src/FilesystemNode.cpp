@@ -9,6 +9,9 @@
 
 #include "xxhash_cpp/xxhash.hpp"
 
+namespace dejavu
+{
+
 constexpr size_t PARTIAL_HASH_SIZE = 4096;
 constexpr size_t READ_CHUNK_SIZE = 65536;
 
@@ -236,3 +239,5 @@ std::filesystem::path DirectoryNode::CleanPath(
 {
   return (path / "").parent_path();
 }
+
+} // namespace dejavu
