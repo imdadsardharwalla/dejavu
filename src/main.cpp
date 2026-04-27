@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
-#include <iostream>
+#include <print>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -9,9 +9,13 @@
 #include "DuplicateFinder.h"
 #include "FilesystemNode.h"
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include "cpp-linenoise/linenoise.hpp"
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 namespace fs = std::filesystem;
 
@@ -66,40 +70,44 @@ void CompleteFilesystemPath(const std::string& partial,
 
 void PrintInputPaths(const dejavu::DuplicateFinder& finder)
 {
-  std::cout << "\n";
+  std::println();
 
   if (finder.InputFileCount() > 0)
   {
-    std::cout << "Input Files:\n";
+    std::println("Input Files:");
     for (const auto& path : finder.InputFiles())
-      std::cout << "  " << path.string() << "\n";
+      std::println("  {}", path.string());
   }
   else
   {
-    std::cout << "Input Files: none\n";
+    std::println("Input Files: none");
   }
 
-  std::cout << std::endl;
+  std::println();
 
   if (finder.InputDirectoryCount() > 0)
   {
-    std::cout << "Input Directories:\n";
+    std::println("Input Directories:");
     for (const auto& path : finder.InputDirectories())
-      std::cout << "  " << path.string() << "\n";
+      std::println("  {}", path.string());
   }
   else
   {
-    std::cout << "Input Directories: none\n";
+    std::println("Input Directories: none");
   }
 
-  std::cout << std::endl;
+  std::println();
 }
 
 // Print `heading` as a full-width section divider, e.g.
-//   ---- Heading Name ------------------------------
-// The line is padded with dashes to the terminal width.
+//   ──── Heading Name ──────────────────────────────
+// The line is padded with U+2500 box-drawing dashes to the terminal width.
+// std::print on a Windows console writes via WriteConsoleW, so the UTF-8
+// dashes render correctly regardless of console codepage.
 void PrintSectionHeading(const std::string& heading)
 {
+  // U+2500 BOX DRAWINGS LIGHT HORIZONTAL, encoded as UTF-8.
+  static constexpr std::string_view kDash = "\xE2\x94\x80";
   static constexpr int kPrefixDashes = 4;
 
   int cols = linenoise::getColumns(0, 1);
@@ -109,9 +117,13 @@ void PrintSectionHeading(const std::string& heading)
   const int fill =
       std::max(0, cols - kPrefixDashes - 2 - static_cast<int>(heading.size()));
 
-  std::cout << "\n"
-            << std::string(kPrefixDashes, '-') << " " << heading << " "
-            << std::string(fill, '-') << std::endl;
+  std::print("\n");
+  for (int i = 0; i < kPrefixDashes; ++i)
+    std::print("{}", kDash);
+  std::print(" {} ", heading);
+  for (int i = 0; i < fill; ++i)
+    std::print("{}", kDash);
+  std::println();
 }
 
 template <typename NodeT>
@@ -121,17 +133,16 @@ void PrintDuplicateGroups(
   PrintSectionHeading(heading);
   if (groups.empty())
   {
-    std::cout << "\nNo duplicates found." << std::endl;
+    std::println("\nNo duplicates found.");
     return;
   }
 
   for (size_t i = 0; i < groups.size(); ++i)
   {
-    std::cout << "\nGroup " << (i + 1) << ":" << std::endl;
+    std::println("\nGroup {}:", i + 1);
     for (const auto* node : groups[i])
     {
-      std::cout << "  " << node->Path().string() << " (" << node->Size()
-                << " bytes)" << std::endl;
+      std::println("  {} ({} bytes)", node->Path().string(), node->Size());
     }
   }
 }
@@ -140,19 +151,19 @@ void PrintDuplicates(const dejavu::DuplicateFinder& finder)
 {
   PrintDuplicateGroups("Duplicate Directories", finder.DirectoryDuplicates());
   PrintDuplicateGroups("Duplicate Files", finder.FileDuplicates());
-  std::cout << std::endl;
+  std::println();
 }
 
 void PrintHelp()
 {
-  std::cout << "Commands:\n"
-            << "  add <path>  Add a file or directory to scan\n"
-            << "  list        List all files and directories added to scan\n"
-            << "  scan        Run (or re-run) duplicate detection\n"
-            << "  show        Show the last computed results\n"
-            << "  help        Show this message\n"
-            << "  quit        Exit the program\n"
-            << std::endl;
+  std::print("Commands:\n"
+             "  add <path>  Add a file or directory to scan\n"
+             "  list        List all files and directories added to scan\n"
+             "  scan        Run (or re-run) duplicate detection\n"
+             "  show        Show the last computed results\n"
+             "  help        Show this message\n"
+             "  quit        Exit the program\n"
+             "\n");
 }
 
 void AddPathToFinder(dejavu::DuplicateFinder& finder, const std::string& path)
@@ -160,11 +171,11 @@ void AddPathToFinder(dejavu::DuplicateFinder& finder, const std::string& path)
   try
   {
     finder.Add(fs::path(path));
-    std::cout << "Added: " << path << std::endl;
+    std::println("Added: {}", path);
   }
   catch (const std::exception& e)
   {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::println(stderr, "Error: {}", e.what());
   }
 }
 
@@ -209,7 +220,7 @@ int main(const int argc, const char* const argv[])
         }
       });
 
-  std::cout << "\nType 'help' for available commands.\n" << std::endl;
+  std::println("\nType 'help' for available commands.\n");
 
   std::string line;
   while (true)
@@ -239,7 +250,7 @@ int main(const int argc, const char* const argv[])
     {
       if (arg.empty())
       {
-        std::cerr << "Usage: add <path>" << std::endl;
+        std::println(stderr, "Usage: add <path>");
         continue;
       }
 
@@ -258,23 +269,22 @@ int main(const int argc, const char* const argv[])
       }
       catch (const std::exception& e)
       {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::println(stderr, "Error: {}", e.what());
       }
     }
     else if (command == "show")
     {
       if (!finder.ResultsUpToDate())
       {
-        std::cout << "(Results may be stale - run 'scan' to refresh.)"
-                  << std::endl;
+        std::println("(Results may be stale - run 'scan' to refresh.)");
       }
 
       PrintDuplicates(finder);
     }
     else
     {
-      std::cerr << "Unknown command: " << command << std::endl;
-      std::cerr << "Type 'help' for available commands." << std::endl;
+      std::println(stderr, "Unknown command: {}", command);
+      std::println(stderr, "Type 'help' for available commands.");
     }
   }
 

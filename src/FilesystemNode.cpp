@@ -4,7 +4,7 @@
 #include <array>
 #include <cassert>
 #include <fstream>
-#include <iostream>
+#include <print>
 #include <string>
 
 #include "xxhash_cpp/xxhash.hpp"
@@ -24,15 +24,15 @@ FilesystemNode::FilesystemNode(
 
 void FilesystemNode::PrintNode(const int indent) const
 {
-  std::string indent_str(indent, ' ');
-  std::cout << indent_str << m_path.filename().string();
+  const std::string indent_str(indent, ' ');
+  std::print("{} {} ", indent_str, m_path.filename().string());
 
   if (Size() != kInvalidSize)
-    std::cout << " (" << m_size << " bytes)";
+    std::print(" ({})", m_size);
   else
-    std::cout << " (size unknown)";
+    std::print(" (size unknown)");
 
-  std::cout << std::endl;
+  std::println();
 }
 
 FileNode::FileNode(const std::filesystem::path& path, DirectoryNode* parent)
@@ -118,9 +118,9 @@ void DirectoryNode::BuildTree()
       m_size += AddChildNode(m_child_files, entry.path());
     else
     {
-      std::cerr << "Skipping " << entry.path().string()
-                << " because it is not a directory or a regular file"
-                << std::endl;
+      std::println(stderr,
+          "Skipping {} because it is not a directory or a regular file",
+          entry.path().string());
     }
   }
 
@@ -140,9 +140,6 @@ void DirectoryNode::PrintTree(const int indent) const
 
   for (const auto& child_file : m_child_files)
     child_file->PrintTree(indent + 2);
-
-  if (indent == 0)
-    std::cout << std::flush;
 }
 
 void DirectoryNode::FlattenTree(

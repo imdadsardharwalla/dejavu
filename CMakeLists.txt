@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if (MSVC)
-  add_compile_options( "/W4" "/WX" "/MP" "/Zi" )
+  add_compile_options( "/W4" "/WX" "/MP" "/Zi" "/utf-8" )
 else()
   message(FATAL_ERROR "Only Windows is currently supported.")
 endif()
