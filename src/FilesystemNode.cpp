@@ -12,12 +12,12 @@
 namespace dejavu
 {
 
-constexpr size_t PARTIAL_HASH_SIZE = 4096;
-constexpr size_t READ_CHUNK_SIZE = 65536;
+constexpr size_t kPartialHashSize = 4096;
+constexpr size_t kReadChunkSize = 65536;
 
 FilesystemNode::FilesystemNode(
     const std::filesystem::path& path, DirectoryNode* parent)
-    : m_path(path), m_size(INVALID_SIZE), m_parent(parent)
+    : m_path(path), m_size(kInvalidSize), m_parent(parent)
 {
   m_path.make_preferred();
 }
@@ -27,7 +27,7 @@ void FilesystemNode::PrintNode(const int indent) const
   std::string indent_str(indent, ' ');
   std::cout << indent_str << m_path.filename().string();
 
-  if (Size() != INVALID_SIZE)
+  if (Size() != kInvalidSize)
     std::cout << " (" << m_size << " bytes)";
   else
     std::cout << " (size unknown)";
@@ -48,8 +48,8 @@ void FileNode::BuildTree() { m_size = std::filesystem::file_size(m_path); }
 
 void FileNode::PrintTree(const int indent) const { PrintNode(indent); }
 
-// Read the first PARTIAL_HASH_SIZE bytes of the file and compute the partial
-// hash. If the file is smaller than PARTIAL_HASH_SIZE, we can also set the full
+// Read the first kPartialHashSize bytes of the file and compute the partial
+// hash. If the file is smaller than kPartialHashSize, we can also set the full
 // hash.
 uint64_t FileNode::PartialHash()
 {
@@ -59,20 +59,20 @@ uint64_t FileNode::PartialHash()
     if (!file)
       throw std::runtime_error("Cannot open file: " + m_path.string());
 
-    std::array<char, PARTIAL_HASH_SIZE> buffer{};
-    file.read(buffer.data(), PARTIAL_HASH_SIZE);
+    std::array<char, kPartialHashSize> buffer{};
+    file.read(buffer.data(), kPartialHashSize);
     const auto bytes_read = static_cast<size_t>(file.gcount());
 
     m_partial_hash = xxh::xxhash<64>(buffer.data(), bytes_read);
 
     // If we've read the entire file, we can also set the full hash.
-    if (bytes_read < PARTIAL_HASH_SIZE)
+    if (bytes_read < kPartialHashSize)
       m_full_hash = m_partial_hash.value();
   }
   return m_partial_hash.value();
 }
 
-// Read the entire file in chunks of READ_CHUNK_SIZE bytes and compute the full
+// Read the entire file in chunks of kReadChunkSize bytes and compute the full
 // hash.
 uint64_t FileNode::FullHash()
 {
@@ -83,9 +83,9 @@ uint64_t FileNode::FullHash()
       throw std::runtime_error("Cannot open file: " + m_path.string());
 
     xxh::hash_state_t<64> hash_state;
-    std::array<char, READ_CHUNK_SIZE> buffer{};
+    std::array<char, kReadChunkSize> buffer{};
 
-    while (file.read(buffer.data(), READ_CHUNK_SIZE) || file.gcount() > 0)
+    while (file.read(buffer.data(), kReadChunkSize) || file.gcount() > 0)
     {
       hash_state.update(buffer.data(), static_cast<size_t>(file.gcount()));
       if (file.eof())
@@ -179,7 +179,7 @@ uint64_t DirectoryNode::Fingerprint()
 
       // Include child directory size
       const auto size = child_directory->Size();
-      assert(size != INVALID_SIZE);
+      assert(size != kInvalidSize);
       hash_state.update(&size, sizeof(size));
     }
 
@@ -190,14 +190,13 @@ uint64_t DirectoryNode::Fingerprint()
 
       // If the child file has a full hash, include it. Otherwise, include the
       // partial hash.
-      const auto hash = child_file->HasFullHash()
-                            ? child_file->FullHash()
-                            : child_file->PartialHash();
+      const auto hash = child_file->HasFullHash() ? child_file->FullHash()
+                                                  : child_file->PartialHash();
       hash_state.update(&hash, sizeof(hash));
 
       // Include child file size
       const auto size = child_file->Size();
-      assert(size != INVALID_SIZE);
+      assert(size != kInvalidSize);
       hash_state.update(&size, sizeof(size));
     }
 
@@ -220,7 +219,7 @@ uintmax_t DirectoryNode::AddChildNode(
   child_node->BuildTree();
 
   const auto size = child_node->Size();
-  assert(size != INVALID_SIZE);
+  assert(size != kInvalidSize);
   return size;
 }
 

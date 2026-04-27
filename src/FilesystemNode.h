@@ -10,7 +10,7 @@
 namespace dejavu
 {
 
-const auto INVALID_SIZE = std::numeric_limits<std::uintmax_t>::max();
+constexpr auto kInvalidSize = std::numeric_limits<std::uintmax_t>::max();
 
 class DirectoryNode;
 class FilesystemNode
@@ -30,7 +30,7 @@ protected:
   void PrintNode(const int indent) const;
 
   std::filesystem::path m_path;
-  std::uintmax_t m_size = INVALID_SIZE;
+  std::uintmax_t m_size = kInvalidSize;
   DirectoryNode* m_parent = nullptr;
 };
 
@@ -56,13 +56,12 @@ private:
 class DirectoryNode : public FilesystemNode
 {
 public:
-  DirectoryNode(
-      const std::filesystem::path& path, DirectoryNode* parent);
+  DirectoryNode(const std::filesystem::path& path, DirectoryNode* parent);
 
   void BuildTree() override;
   void PrintTree(const int indent = 0) const override;
-  void FlattenTree(std::vector<DirectoryNode*>& directories,
-      std::vector<FileNode*>& files);
+  void FlattenTree(
+      std::vector<DirectoryNode*>& directories, std::vector<FileNode*>& files);
 
   uint64_t Fingerprint();
 

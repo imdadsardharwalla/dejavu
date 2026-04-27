@@ -200,8 +200,7 @@ std::vector<std::filesystem::path> DuplicateFinder::InputFiles() const
   return paths;
 }
 
-std::vector<std::filesystem::path>
-DuplicateFinder::InputDirectories() const
+std::vector<std::filesystem::path> DuplicateFinder::InputDirectories() const
 {
   std::vector<std::filesystem::path> paths;
   for (auto& directory : m_input_directories)
