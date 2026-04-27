@@ -155,6 +155,19 @@ void PrintHelp()
             << std::endl;
 }
 
+void AddPathToFinder(dejavu::DuplicateFinder& finder, const std::string& path)
+{
+  try
+  {
+    finder.Add(fs::path(path));
+    std::cout << "Added: " << path << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
+}
+
 } // namespace
 
 int main(const int argc, const char* const argv[])
@@ -163,17 +176,7 @@ int main(const int argc, const char* const argv[])
 
   // Add any command-line arguments as files or directories to scan.
   for (int i = 1; i < argc; ++i)
-  {
-    try
-    {
-      finder.Add(fs::path(argv[i]));
-      std::cout << "Added: " << argv[i] << std::endl;
-    }
-    catch (const std::exception& e)
-    {
-      std::cerr << "Error: " << e.what() << std::endl;
-    }
-  }
+    AddPathToFinder(finder, argv[i]);
 
   // Register a callback for tab-completion. Linenoise calls it with the
   // current input line and expects us to fill `completions` with candidate
@@ -240,15 +243,7 @@ int main(const int argc, const char* const argv[])
         continue;
       }
 
-      try
-      {
-        finder.Add(fs::path(arg));
-        std::cout << "Added: " << arg << std::endl;
-      }
-      catch (const std::exception& e)
-      {
-        std::cerr << "Error: " << e.what() << std::endl;
-      }
+      AddPathToFinder(finder, arg);
     }
     else if (command == "list")
     {
