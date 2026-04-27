@@ -1,6 +1,9 @@
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "DuplicateFinder.h"
@@ -15,7 +18,7 @@ namespace fs = std::filesystem;
 namespace
 {
 
-const std::vector<std::string> commands = {
+constexpr std::array<std::string_view, 7> kCommands = {
     "add", "list", "scan", "show", "help", "quit", "exit"};
 
 // Populate `completions` with filesystem entries that match `partial`, each
@@ -92,11 +95,30 @@ void PrintInputPaths(const dejavu::DuplicateFinder& finder)
   std::cout << std::endl;
 }
 
+// Print `heading` as a full-width section divider, e.g.
+//   ---- Heading Name ------------------------------
+// The line is padded with dashes to the terminal width.
+void PrintSectionHeading(const std::string& heading)
+{
+  static constexpr int kPrefixDashes = 4;
+
+  int cols = linenoise::getColumns(0, 1);
+  if (cols <= 0)
+    cols = 80;
+
+  const int fill =
+      std::max(0, cols - kPrefixDashes - 2 - static_cast<int>(heading.size()));
+
+  std::cout << "\n"
+            << std::string(kPrefixDashes, '-') << " " << heading << " "
+            << std::string(fill, '-') << std::endl;
+}
+
 template <typename NodeT>
 void PrintDuplicateGroups(
     const std::string& heading, const std::vector<std::vector<NodeT*>>& groups)
 {
-  std::cout << "\n=== " << heading << " ===" << std::endl;
+  PrintSectionHeading(heading);
   if (groups.empty())
   {
     std::cout << "\nNo duplicates found." << std::endl;
@@ -165,10 +187,10 @@ int main(const int argc, const char* const argv[])
         // Suggest any known commands that start with what they've typed.
         if (sep == std::string::npos)
         {
-          for (const auto& cmd : commands)
+          for (const auto& cmd : kCommands)
           {
             if (cmd.substr(0, input.size()) == input)
-              completions.push_back(cmd);
+              completions.emplace_back(cmd);
           }
           return;
         }
