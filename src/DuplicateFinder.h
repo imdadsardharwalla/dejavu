@@ -22,6 +22,11 @@ public:
 
   bool ResultsUpToDate() const { return m_results_valid; }
 
+  std::vector<std::filesystem::path> InputFiles() const;
+  std::vector<std::filesystem::path> InputDirectories() const;
+  size_t InputFileCount() const { return m_input_files.size(); }
+  size_t InputDirectoryCount() const { return m_input_directories.size(); }
+
 private:
   std::vector<std::unique_ptr<FileNode>> m_input_files;
   std::vector<std::unique_ptr<DirectoryNode>> m_input_directories;

@@ -191,4 +191,22 @@ DuplicateFinder::DirectoryDuplicates() const
 {
   return m_duplicate_directories;
 }
+
+std::vector<std::filesystem::path> DuplicateFinder::InputFiles() const
+{
+  std::vector<std::filesystem::path> paths;
+  for (auto& file : m_input_files)
+    paths.push_back(file->Path());
+  return paths;
+}
+
+std::vector<std::filesystem::path>
+DuplicateFinder::InputDirectories() const
+{
+  std::vector<std::filesystem::path> paths;
+  for (auto& directory : m_input_directories)
+    paths.push_back(directory->Path());
+  return paths;
+}
+
 } // namespace dejavu

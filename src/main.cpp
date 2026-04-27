@@ -16,7 +16,7 @@ namespace
 {
 
 const std::vector<std::string> commands = {
-    "add", "scan", "show", "help", "quit", "exit"};
+    "add", "list", "scan", "show", "help", "quit", "exit"};
 
 // Populate `completions` with filesystem entries that match `partial`, each
 // prepended with `prefix` - note that a linenoise "completion" is the entire
@@ -61,6 +61,37 @@ void CompleteFilesystemPath(const std::string& partial,
   }
 }
 
+void PrintInputPaths(const dejavu::DuplicateFinder& finder)
+{
+  std::cout << "\n";
+
+  if (finder.InputFileCount() > 0)
+  {
+    std::cout << "Input Files:\n";
+    for (const auto& path : finder.InputFiles())
+      std::cout << "  " << path.string() << "\n";
+  }
+  else
+  {
+    std::cout << "Input Files: none\n";
+  }
+
+  std::cout << std::endl;
+
+  if (finder.InputDirectoryCount() > 0)
+  {
+    std::cout << "Input Directories:\n";
+    for (const auto& path : finder.InputDirectories())
+      std::cout << "  " << path.string() << "\n";
+  }
+  else
+  {
+    std::cout << "Input Directories: none\n";
+  }
+
+  std::cout << std::endl;
+}
+
 template <typename NodeT>
 void PrintDuplicateGroups(
     const std::string& heading, const std::vector<std::vector<NodeT*>>& groups)
@@ -94,6 +125,7 @@ void PrintHelp()
 {
   std::cout << "Commands:\n"
             << "  add <path>  Add a file or directory to scan\n"
+            << "  list        List all files and directories added to scan\n"
             << "  scan        Run (or re-run) duplicate detection\n"
             << "  show        Show the last computed results\n"
             << "  help        Show this message\n"
@@ -195,6 +227,10 @@ int main(const int argc, const char* const argv[])
       {
         std::cerr << "Error: " << e.what() << std::endl;
       }
+    }
+    else if (command == "list")
+    {
+      PrintInputPaths(finder);
     }
     else if (command == "scan")
     {
